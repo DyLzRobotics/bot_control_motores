@@ -1,3 +1,4 @@
+import  serial
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -6,7 +7,7 @@ TOKEN = "7900027175:AAGbnNQTsM5YKGv8krenhVz4XCwxki-bcMU"
 
 
 # Lista de movimientos del robot
-async def muve_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def move_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Obtener argumentos del comando
     datos = context.args
 
@@ -27,7 +28,21 @@ async def muve_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"  - Acción: {accion}\n\n"
             f"Procesando solicitud..."
         )
+        print(datos)
 
+        movimiento = datos
+
+        serialArduino  = serial.Serial("COM1", 9600)
+
+        if len(movimiento) == 3:
+            while 1:
+                parte = movimiento[0]
+                lugar = movimiento[1]
+                accion = movimiento[2]
+
+                cad = str(parte) + "," + str(lugar) + "," + str(accion)
+                print(cad)
+                break
     return datos
 
 
@@ -50,16 +65,16 @@ async def info_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Información de las partes y acciones del robot
-async def infomuve_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def infomove_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(context.args)
     await update.message.reply_text(
         "Partes y acciones disponibles para el robot:\n\n"
         "Partes del robot:\n"
-        "  - brazo: adelante, atrás, rotar\n"
+        "  - brazo: adelante, atrás, rotar, lateral\n"
         "  - cabeza: rotar, mover\n"
         "  - mano: abrir, cerrar, girar\n"
         "  - codo: adelante, atrás, rotar\n"
-        "  - hombro: adelante, atrás\n"
+        "  - hombro: adelante, atrás, lateral\n"
         "  - ojos: abrir, cerrar, izquierda, derecha\n"
         "  - boca: abrir, cerrar\n"
         "  - cuello: rotar\n"
@@ -73,14 +88,14 @@ def main():
     application = ApplicationBuilder().token(TOKEN).build()
 
     # Manejadores de comandos
-    application.add_handler(CommandHandler("Muve", muve_robot))
+    application.add_handler(CommandHandler("Move", move_robot))
     application.add_handler(CommandHandler("Info", info_robot))
-    application.add_handler(CommandHandler("InfoMuve", infomuve_robot))
+    application.add_handler(CommandHandler("InfoMove", infomove_robot))
     from telegram.ext import MessageHandler, filters
-
 
     # Iniciar el bot
     application.run_polling()
 
 if __name__ == "__main__":
     main()
+
