@@ -1,0 +1,28 @@
+#include <SoftwareSerial.h>
+
+void setup() {
+  Serial.begin(9600);  // Inicializa la comunicación serial a 9600 bps
+  delay(30);           // Pequeña pausa para estabilizar
+}
+
+String cad;  // Variable global para almacenar los datos recibidos
+String inidex;
+String posicion;
+String hubicacion;
+String accion;
+void loop() {
+  if (Serial.available()) {                 // Si hay datos disponibles en el puerto serial
+    cad = Serial.readString();              // Lee los datos como cadena de texto a,b,c
+     // Buscar delimitadores y extraer subcadenas
+    int firstComma = cad.indexOf(',');      // Encuentra la posición del primer ","
+    int secondComma = cad.indexOf(',', firstComma + 1);  // Encuentra la posición del segundo ","
+    
+    //Encorntrar las funciones
+      posicion = cad.substring(0, firstComma);               // Subcadena antes del primer ","
+      hubicacion = cad.substring(firstComma + 1, secondComma); // Subcadena entre el primer y segundo ","
+      accion = cad.substring(secondComma + 1);        
+      
+    Serial.print("Cadena recibida: ");      // Mensaje descriptivo
+    Serial.println(cad);                    // Imprime la cadena recibida
+  }
+}
