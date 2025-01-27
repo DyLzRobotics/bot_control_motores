@@ -1,28 +1,81 @@
-#include <SoftwareSerial.h>
+#include "ServoMotores.h"
+
+// Definir los pines para TX y RX
+const int RX_PIN = 2;  // Pin RX (conéctalo al TX del otro dispositivo)
+const int TX_PIN = 3;  // Pin TX (conéctalo al RX del otro dispositivo)
+
+// Crear el objeto ServoMotores
+ServoMotores servo(RX_PIN, TX_PIN);
 
 void setup() {
   Serial.begin(9600);  // Inicializa la comunicación serial a 9600 bps
   delay(30);           // Pequeña pausa para estabilizar
 }
 
-String cad;  // Variable global para almacenar los datos recibidos
-String inidex;
-String posicion;
-String hubicacion;
-String accion;
+String cad;           // Variable global para almacenar los datos recibidos
+String parte;         // Parte del cuerpo
+String hubicacion;    // Ubicación de la parte (izquierda/derecha)
+String accion;        // Acción a realizar
+
 void loop() {
   if (Serial.available()) {                 // Si hay datos disponibles en el puerto serial
-    cad = Serial.readString();              // Lee los datos como cadena de texto a,b,c
-     // Buscar delimitadores y extraer subcadenas
+    cad = Serial.readString();              // Lee los datos como cadena de texto, ejemplo: "mano,izquierda,abrir"
+    
+    // Buscar delimitadores y extraer subcadenas
     int firstComma = cad.indexOf(',');      // Encuentra la posición del primer ","
     int secondComma = cad.indexOf(',', firstComma + 1);  // Encuentra la posición del segundo ","
     
-    //Encorntrar las funciones
-      posicion = cad.substring(0, firstComma);               // Subcadena antes del primer ","
+    if (firstComma != -1 && secondComma != -1) { // Verifica que los delimitadores existan
+      parte = cad.substring(0, firstComma);               // Subcadena antes del primer ","
       hubicacion = cad.substring(firstComma + 1, secondComma); // Subcadena entre el primer y segundo ","
-      accion = cad.substring(secondComma + 1);        
+      accion = cad.substring(secondComma + 1);            // Subcadena después del segundo ","
       
-    Serial.print("Cadena recibida: ");      // Mensaje descriptivo
-    Serial.println(cad);                    // Imprime la cadena recibida
+      // Imprime los valores obtenidos
+      Serial.println(parte);
+      Serial.println(hubicacion);
+      Serial.println(accion);
+
+      // Lógica basada en las subcadenas
+      if (parte == "mano") {
+        if (hubicacion == "izquierda") {
+          if (accion == "abrir") {
+            servo.AbrirManoI();
+            // Llamar a la función correspondiente aquí
+          } else if (accion == "cerrar") {
+            Serial.println("Cerrar mano izquierda");
+            // Llamar a la función correspondiente aquí
+          }
+        } else if (hubicacion == "derecha") {
+          if (accion == "abrir") {
+            Serial.println("Abrir mano derecha");
+            // Llamar a la función correspondiente aquí
+          } else if (accion == "cerrar") {
+            Serial.println("Cerrar mano derecha");
+            // Llamar a la función correspondiente aquí
+          }
+        }
+      } else if (parte == "codo") {
+        if (hubicacion == "izquierda") {
+          if (accion == "subir") {
+            Serial.println("Subir codo izquierdo");
+            // Llamar a la función correspondiente aquí
+          } else if (accion == "bajar") {
+            Serial.println("Bajar codo izquierdo");
+            // Llamar a la función correspondiente aquí
+          }
+        } else if (hubicacion == "derecha") {
+          if (accion == "subir") {
+            Serial.println("Subir codo derecho");
+            // Llamar a la función correspondiente aquí
+          } else if (accion == "bajar") {
+            Serial.println("Bajar codo derecho");
+            // Llamar a la función correspondiente aquí
+          }
+        }
+      } 
+      // Agregar más condiciones para otras partes del cuerpo aquí...
+    } else {
+      Serial.println("Error: formato incorrecto.");
+    }
   }
 }
