@@ -1,9 +1,13 @@
-import  serial
+import serial
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # Token del bot
-TOKEN = "7900027175:AAGbnNQTsM5YKGv8krenhVz4XCwxki-bcMU"
+TOKEN = "7900027175:AAGbnNQTsM5YKGv8krenhVz4XCwxki-bcMU"  # Cambia esto por tu token real
+
+# Configuración de comunicación serial
+SERIAL_PORT = "COM1"  # Cambia esto al puerto correspondiente
+BAUD_RATE = 9600
 
 
 # Lista de movimientos del robot
@@ -11,40 +15,40 @@ async def move_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Obtener argumentos del comando
     datos = context.args
 
-    if not datos:
+    if not datos or len(datos) < 3:
         await update.message.reply_text(
             "Por favor, especifica la parte del cuerpo, posición y acción que el robot debe realizar.\n"
-            "Ejemplo: /Muve brazo izquierdo rotar"
+            "Ejemplo: /Move brazo izquierdo rotar"
         )
-    else:
-        parte = datos[0]
-        posicion = datos[1] if len(datos) > 1 else "desconocida"
-        accion = datos[2] if len(datos) > 2 else "desconocida"
+        return
 
+    # Extraer los argumentos
+    parte = datos[0]
+    posicion = datos[1]
+    accion = datos[2]
+
+    # Enviar respuesta al usuario
+    await update.message.reply_text(
+        f"Has indicado los siguientes parámetros:\n"
+        f"  - Parte del robot: {parte}\n"
+        f"  - Posición: {posicion}\n"
+        f"  - Acción: {accion}\n\n"
+        f"Procesando solicitud..."
+    )
+    print(f"Datos recibidos: {datos}")
+
+    try:
+        # Conexión serial con Arduino
+        with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2) as serialArduino:
+            # Crear la cadena de comando
+            comando = f"{parte},{posicion},{accion}\n"
+            serialArduino.write(comando.encode())  # Convertir a byte string
+            print(f"Comando enviado: {comando}")
+    except serial.SerialException as e:
         await update.message.reply_text(
-            f"Has indicado los siguientes parámetros:\n"
-            f"  - Parte del robot: {parte}\n"
-            f"  - Posición: {posicion}\n"
-            f"  - Acción: {accion}\n\n"
-            f"Procesando solicitud..."
+            "Error al comunicarse con el Arduino. Verifica la conexión serial."
         )
-        print(datos)
-
-        movimiento = datos
-
-        serialArduino  = serial.Serial("COM1", 9600)
-
-        if len(movimiento) == 3:
-            while 1:
-                parte = movimiento[0]
-                lugar = movimiento[1]
-                accion = movimiento[2]
-
-                cad = str(parte) + "," + str(lugar) + "," + str(accion)
-                print(cad)
-                break
-    return datos
-
+        print(f"Error serial: {e}")
 
 # Información general del robot
 async def info_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -52,8 +56,8 @@ async def info_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Información del robot y cómo usar este bot:\n\n"
         "Comandos disponibles:\n"
         "  /Info - Información general sobre el robot.\n"
-        "  /InfoMuve - Lista de las partes del robot y acciones posibles.\n"
-        "  /Muve - Ejecuta un movimiento en una parte específica del robot.\n\n"
+        "  /InfoMove - Lista de las partes del robot y acciones posibles.\n"
+        "  /Move - Ejecuta un movimiento en una parte específica del robot.\n\n"
         "Detalles del robot:\n"
         "  - Motores de los brazos: 2 motores (25 kg de capacidad cada uno).\n"
         "  - Motores de las manos: 2 motores (2.5 kg de capacidad cada uno).\n"
@@ -66,11 +70,9 @@ async def info_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Información de las partes y acciones del robot
 async def infomove_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(context.args)
     await update.message.reply_text(
         "Partes y acciones disponibles para el robot:\n\n"
         "Partes del robot:\n"
-        "  - brazo: adelante, atrás, rotar, lateral\n"
         "  - cabeza: rotar, mover\n"
         "  - mano: abrir, cerrar, girar\n"
         "  - codo: adelante, atrás, rotar\n"
@@ -79,9 +81,7 @@ async def infomove_robot(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "  - boca: abrir, cerrar\n"
         "  - cuello: rotar\n"
         "  - cadera: rotar\n\n"
-        "Ejemplo de comando: /Muve brazo rotar 90 grados"
     )
-
 
 # Configuración principal del bot
 def main():
@@ -91,11 +91,10 @@ def main():
     application.add_handler(CommandHandler("Move", move_robot))
     application.add_handler(CommandHandler("Info", info_robot))
     application.add_handler(CommandHandler("InfoMove", infomove_robot))
-    from telegram.ext import MessageHandler, filters
 
     # Iniciar el bot
     application.run_polling()
 
+
 if __name__ == "__main__":
     main()
-
